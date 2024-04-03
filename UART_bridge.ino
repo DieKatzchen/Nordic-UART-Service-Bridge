@@ -1,17 +1,19 @@
 
-/** NimBLE_Server Demo:
+/** Nordic UART Service Bridge:
  *
- *  Demonstrates many of the available features of the NimBLE client library.
+ *  Connects with a BLE device specified by name and bridges the Nordic UART Service to its serial port
  *
- *  Created: on March 24 2020
- *      Author: H2zero
+ *  Created: on April 2 2024
+ *      Author: DieKatzchen
  *
 */
 
 #include <NimBLEDevice.h>
 
 #define GLOVENAME "lucidgloves-right"
+#define LED 2
 //#define _DEBUG //Uncomment to turn on debug messages
+
 void scanEndedCB(NimBLEScanResults results);
 
 static NimBLEAdvertisedDevice* advDevice;
@@ -31,6 +33,7 @@ class ClientCallbacks : public NimBLEClientCallbacks {
         Serial.print(pClient->getPeerAddress().toString().c_str());
         Serial.println(" Disconnected - Starting scan");
         #endif
+        digitalWrite(LED, LOW);
         connected = false;
 
         NimBLEDevice::deleteClient(pClient);
@@ -98,7 +101,7 @@ bool connectToServer() {
             #ifdef _DEBUG
             Serial.println("Reconnected client");
             #endif
-            connected = true;
+            //connected = true;
         }
         // We don't already have a client that knows this device,
         //  we will check for a client that is disconnected that we can use.
@@ -198,6 +201,7 @@ bool connectToServer() {
 
 void setup (){
     Serial.begin(115200);
+    pinMode(LED, OUTPUT);
     #ifdef _DEBUG
     Serial.println("Starting NimBLE Client");
     #endif
@@ -242,11 +246,13 @@ void loop (){
         #ifdef _DEBUG
         Serial.println("Success! we should now be getting notifications");
         #endif
+        digitalWrite(LED, HIGH);
         connected = true;
       } else {
         #ifdef _DEBUG
         Serial.println("Failed to connect, starting scan");
         #endif
+        digitalWrite(LED, LOW);
         connected = false;
         NimBLEDevice::getScan()->start(scanTime, scanEndedCB);
       }
