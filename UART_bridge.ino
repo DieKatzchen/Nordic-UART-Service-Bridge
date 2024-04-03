@@ -162,16 +162,28 @@ bool connectToServer() {
     pSvc = pClient->getService("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
     if(pSvc) {     /** make sure it's not null */
         txChr = pSvc->getCharacteristic("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
-        if(txChr) {     /** make sure it's not null */
-            }
+        if(!txChr){
+          #ifdef _DEBUG
+          Serial.println("Nordic TX characteristic not found.");
+          #endif
+          return false;
+        }
+        /*if(txChr) {     // make sure it's not null
             if(txChr->canNotify()) {
                 if(!txChr->subscribe(true, notifyCB)) {
-                    /** Disconnect if subscribe failed */
+                    // Disconnect if subscribe failed
                     pClient->disconnect();
                     return false;
                 }
             }
+        }*/
         rxChr = pSvc->getCharacteristic("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+        if(!rxChr){
+          #ifdef _DEBUG
+          Serial.println("Nordic RX characteristic not found.");
+          #endif
+          return false;
+        }
     } else {
         #ifdef _DEBUG
         Serial.println("Nordic UART service not found.");
@@ -238,15 +250,18 @@ void loop (){
         connected = false;
         NimBLEDevice::getScan()->start(scanTime, scanEndedCB);
       }
-    } else if(connected && Serial.available()){
-      char message[100];
-      byte size = Serial.readBytesUntil('\n', message, 100);
-      message[size] = NULL;
-      #ifdef _DEBUG
-      Serial.print("sending: ");
-      Serial.print(message);
-      #endif
-      rxChr->writeValue(message);
+    } else if(connected){
+      Serial.print(txChr->readValue().c_str());
+      if (Serial.available()){      
+        char message[100];
+        byte size = Serial.readBytesUntil('\n', message, 100);
+        message[size] = NULL;
+        #ifdef _DEBUG
+        Serial.print("sending: ");
+        Serial.print(message);
+        #endif
+        rxChr->writeValue(message);
+      }
     } else {
       vTaskDelay(1); //keep watchdog fed
     }
